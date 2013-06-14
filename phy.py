@@ -9,6 +9,7 @@ from optparse import OptionParser
 import grextras
 import wx
 import gras
+import burst_gate
 class cog_phy(gras.HierBlock):
 	def __init__(self,device_addr="",samp_rate=int(500e3),
 		tx_A="TX/RX",rx_A="RX2",tx_gain=15,rx_gain=0,centre_freq=int(990e6),
@@ -80,14 +81,17 @@ class cog_phy(gras.HierBlock):
 			log=False,
 		)
 
-	
+		self.gr_multiply_const_vxx_0 = gr.multiply_const_vcc((0.3, ))
+		self.burst_gate_0=burst_gate.burst_gate()
 		##################################################
 		# Connections
 		##################################################
 		self.connect((self.uhd_usrp_source, 0), (self.digital_gmsk_demod, 0))
 		self.connect((self.digital_gmsk_demod, 0), (self.extras_packet_deframer, 0))
 		self.connect((self.extras_packet_framer, 0), (self.digital_gmsk_mod, 0))
-		self.connect((self.digital_gmsk_mod, 0), (self.uhd_usrp_sink, 0))
+		self.connect((self.digital_gmsk_mod, 0), (self.gr_multiply_const_vxx_0,0))
+		self.connect((self.gr_multiply_const_vxx_0,0),(self.burst_gate_0,0))
+		self.connect((self.burst_gate_0,0),(self.uhd_usrp_sink, 0))
 		self.connect((self.extras_packet_deframer, 0), self)
 		self.connect(self,((self.extras_packet_framer, 0)))
 	

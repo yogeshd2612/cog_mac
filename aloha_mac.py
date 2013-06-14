@@ -44,7 +44,7 @@ class aloha_mac(gras.Block):
 			in_sig = [numpy.uint8,numpy.uint8],
             out_sig = [numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
-		self.input_config(1).reserve_items = 0
+		self.input_config(1).reserve_items = 4096
 		#self.output_config(0).reserve_items = 4096
 
 		self.dest_addr=dest_addr
@@ -74,7 +74,7 @@ class aloha_mac(gras.Block):
 		while(1):
 			
 			if(self.arq_state==ARQ_CHANNEL_IDLE):
-				print "In idle state ",self.source_addr 
+				print "In idle state ",len(ins[1]),len(ins[0])
 				msg=self.pop_input_msg(APP_PORT)
 				pkt_msg=msg()
 				if  isinstance(pkt_msg, gras.PacketMsg): 	
@@ -84,44 +84,43 @@ class aloha_mac(gras.Block):
 					self.total_tx+=1
 					self.tx_time=time.time()
 					self.arq_state=ARQ_CHANNEL_BUSY
-
+			#print len(ins[0])
 			msg=self.pop_input_msg(PHY_PORT)
 			pkt_msg=msg()
-			if not isinstance(pkt_msg, gras.PacketMsg): 
-				return	
-			msg_str=pkt_msg.buff.get().tostring()
-			print msg_str
-			if(len(msg_str) >3 and ord(msg_str[PKT_INDEX_DEST])==self.source_addr):
-				# if packet is ack
-				print "i am ",self.source_addr," and rx packet from ",ord(msg_str[PKT_INDEX_DEST])
-				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
-					if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
-						print "pack tx successfully ",self.arq_expected_sequence_no
-						self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%256
-						self.total_pkt_txed+=1
-						self.arq_state=ARQ_CHANNEL_IDLE
+			if isinstance(pkt_msg, gras.PacketMsg): 
+				msg_str=pkt_msg.buff.get().tostring()
+				print msg_str
+				if(len(msg_str) >3 and ord(msg_str[PKT_INDEX_DEST])==self.source_addr):
+					# if packet is ack
+					print "i am ",self.source_addr," and rx packet from ",ord(msg_str[PKT_INDEX_DEST])
+					if(ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
+						if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
+							print "pack tx successfully ",self.arq_expected_sequence_no
+							self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%256
+							self.total_pkt_txed+=1
+							self.arq_state=ARQ_CHANNEL_IDLE
 
-					else:
-						if(time.time()-self.tx_time>self.time_out):
-							if(self.no_attempts>self.max_attempts):
-								print "Channel is broken"
-								return
-							#retransmit
-							print "Retransmitting : ",no_attempts
-							self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,
-								DATA_PKT)
-							self.no_attempts+=1
-							self.tx_time=time.time()
-							self.total_tx+=1
+						else:
+							if(time.time()-self.tx_time>self.time_out):
+								if(self.no_attempts>self.max_attempts):
+									print "Channel is broken"
+									return
+								#retransmit
+								print "Retransmitting : ",no_attempts
+								self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,
+									DATA_PKT)
+								self.no_attempts+=1
+								self.tx_time=time.time()
+								self.total_tx+=1
 
-				# For data pkts
-				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
-					#send ack
-					self.send_pkt_phy("####",ord(msg_str[PKT_INDEX_SEQ]),ACK_PKT)
-					#send pkt to app
-					self.send_pkt_app(msg_str)
-			else:
-				print "i am ",self.source_addr," and rx packet from ",ord(msg_str[PKT_INDEX_DEST])
+					# For data pkts
+					if(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
+						#send ack
+						self.send_pkt_phy("####",ord(msg_str[PKT_INDEX_SEQ]),ACK_PKT)
+						#send pkt to app
+						self.send_pkt_app(msg_str)
+				else:
+					print self.source_addr," receiving packet from ",ord(msg_str[PKT_INDEX_DEST])
 	
 
 	#post msg data to phy port- msg is string
