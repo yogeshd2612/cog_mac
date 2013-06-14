@@ -77,13 +77,13 @@ class aloha_mac(gras.Block):
 				print "In idle state ",self.source_addr 
 				msg=self.pop_input_msg(APP_PORT)
 				pkt_msg=msg()
-				if not isinstance(pkt_msg, gras.PacketMsg): return	
-				self.outgoing_msg=pkt_msg.buff.get().tostring()
-				self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
-				self.no_attempts=1
-				self.total_tx+=1
-				self.tx_time=time.time()
-				self.arq_state=ARQ_CHANNEL_BUSY
+				if  isinstance(pkt_msg, gras.PacketMsg): 	
+					self.outgoing_msg=pkt_msg.buff.get().tostring()
+					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
+					self.no_attempts=1
+					self.total_tx+=1
+					self.tx_time=time.time()
+					self.arq_state=ARQ_CHANNEL_BUSY
 
 			msg=self.pop_input_msg(PHY_PORT)
 			pkt_msg=msg()

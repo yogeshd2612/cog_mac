@@ -80,6 +80,7 @@ class cog_phy(gras.HierBlock):
 			log=False,
 		)
 
+	
 		##################################################
 		# Connections
 		##################################################
@@ -89,7 +90,7 @@ class cog_phy(gras.HierBlock):
 		self.connect((self.digital_gmsk_mod, 0), (self.uhd_usrp_sink, 0))
 		self.connect((self.extras_packet_deframer, 0), self)
 		self.connect(self,((self.extras_packet_framer, 0)))
-
+	
 
 	def print_param(self):
 		print "Parameters :"
