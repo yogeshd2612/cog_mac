@@ -86,14 +86,18 @@ class cog_phy(gras.HierBlock):
 		##################################################
 		# Connections
 		##################################################
+		#RX chain
 		self.connect((self.uhd_usrp_source, 0), (self.digital_gmsk_demod, 0))
 		self.connect((self.digital_gmsk_demod, 0), (self.extras_packet_deframer, 0))
+		self.connect((self.extras_packet_deframer, 0), (self,0))
+		#TX chain		
+		self.connect((self,0),((self.extras_packet_framer, 0)))
 		self.connect((self.extras_packet_framer, 0), (self.digital_gmsk_mod, 0))
 		self.connect((self.digital_gmsk_mod, 0), (self.gr_multiply_const_vxx_0,0))
 		self.connect((self.gr_multiply_const_vxx_0,0),(self.burst_gate_0,0))
 		self.connect((self.burst_gate_0,0),(self.uhd_usrp_sink, 0))
-		self.connect((self.extras_packet_deframer, 0), self)
-		self.connect(self,((self.extras_packet_framer, 0)))
+		#probe to usrp_source for testing fft of received signal
+		self.connect((self.uhd_usrp_source,0),(self,1))
 	
 
 	def print_param(self):
