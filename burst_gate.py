@@ -21,6 +21,7 @@ class burst_gate(gras.Block):
 		self.state = SEARCH_EOB_IN
 		for tag in iter:
 			if (tag.object().key)() == "tx_eob":
+				#print "found burst_tag"
 				self.state = FOUND_EOB_IN
 			else:
 				self.post_output_tag(0, tag)

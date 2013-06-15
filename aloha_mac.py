@@ -44,7 +44,7 @@ class aloha_mac(gras.Block):
 			in_sig = [numpy.uint8,numpy.uint8],
             out_sig = [numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
-		self.input_config(1).reserve_items = 4096
+		#self.input_config(1).reserve_items = 4096
 		#self.output_config(0).reserve_items = 4096
 
 		self.dest_addr=dest_addr
@@ -57,11 +57,14 @@ class aloha_mac(gras.Block):
 		self.tx_time=0
 		self.arq_state=ARQ_CHANNEL_IDLE
 		self.no_attempts=0
+		self.failed_arq=0
 		#measurement variable
 		self.arq_sequence_err_cnt=0
 		self.total_pkt_txed=0
 		self.total_tx=0
 		self.i=0
+		#Queue for app packets
+		self.q=Queue.Queue()
 		
 	def param(self):
 		print "Destination addr : ",self.dest_addr
@@ -72,13 +75,19 @@ class aloha_mac(gras.Block):
 	def work(self,ins,outs):
 		
 		while(1):
-			
+
+			#Taking packet out of App port and puting them on queue
+			msg=self.pop_input_msg(APP_PORT)
+			pkt_msg=msg()
+			if isinstance(pkt_msg, gras.PacketMsg): 
+				print "msg from app"
+				self.q.put(pkt_msg.buff.get().tostring())
+
 			if(self.arq_state==ARQ_CHANNEL_IDLE):
-				print "In idle state ",len(ins[1]),len(ins[0])
-				msg=self.pop_input_msg(APP_PORT)
-				pkt_msg=msg()
-				if  isinstance(pkt_msg, gras.PacketMsg): 	
-					self.outgoing_msg=pkt_msg.buff.get().tostring()
+				print "In idle state "
+				if not self.q.empty():
+					self.outgoing_msg=self.q.get()
+					print self.outgoing_msg
 					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
 					self.no_attempts=1
 					self.total_tx+=1
@@ -96,22 +105,9 @@ class aloha_mac(gras.Block):
 					if(ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
 						if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
 							print "pack tx successfully ",self.arq_expected_sequence_no
-							self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%256
+							self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255
 							self.total_pkt_txed+=1
 							self.arq_state=ARQ_CHANNEL_IDLE
-
-						else:
-							if(time.time()-self.tx_time>self.time_out):
-								if(self.no_attempts>self.max_attempts):
-									print "Channel is broken"
-									return
-								#retransmit
-								print "Retransmitting : ",no_attempts
-								self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,
-									DATA_PKT)
-								self.no_attempts+=1
-								self.tx_time=time.time()
-								self.total_tx+=1
 
 					# For data pkts
 					if(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
@@ -121,7 +117,24 @@ class aloha_mac(gras.Block):
 						self.send_pkt_app(msg_str)
 				else:
 					print self.source_addr," receiving packet from ",ord(msg_str[PKT_INDEX_DEST])
-	
+
+			if self.arq_state==ARQ_CHANNEL_BUSY:
+				if(time.time()-self.tx_time>self.time_out):
+					if(self.no_attempts>self.max_attempts):
+						print "pkt failed arq "
+						self.failed_arq+=1
+						# trying next packet
+						self.arq_state=ARQ_CHANNEL_IDLE
+						self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255 
+					else:
+						#retransmit
+						print "Retransmitting : ",self.no_attempts
+						self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,
+							DATA_PKT)
+						self.no_attempts+=1
+						self.tx_time=time.time()
+						self.total_tx+=1
+
 
 	#post msg data to phy port- msg is string
 	def send_pkt_phy(self,msg,pkt_cnt,protocol_id):

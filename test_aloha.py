@@ -21,7 +21,7 @@ class top_block(grc_wxgui.top_block_gui):
 		self.SetIcon(wx.Icon(_icon_path, wx.BITMAP_TYPE_ANY))
 
 		self.cog_phy_0=phy.cog_phy("addr=10.32.19.156")
-		self.mac_0=aloha_mac.aloha_mac(10,10,25,16)
+		self.mac_0=aloha_mac.aloha_mac(10,10,8,2)
 		
 		#self.cog_phy_1=phy.cog_phy("addr=10.32.19.164")
 		#self.mac_1=aloha_mac.aloha_mac(11,10,25,16)
