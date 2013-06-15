@@ -44,6 +44,7 @@ class aloha_mac(gras.Block):
 			in_sig = [numpy.uint8,numpy.uint8],
             out_sig = [numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
+		self.input_config(1).reserve_items = 0
 		#self.input_config(1).reserve_items = 4096
 		#self.output_config(0).reserve_items = 4096
 
@@ -65,6 +66,7 @@ class aloha_mac(gras.Block):
 		self.i=0
 		#Queue for app packets
 		self.q=Queue.Queue()
+		self.msg_from_app=0
 		
 	def param(self):
 		print "Destination addr : ",self.dest_addr
@@ -74,13 +76,14 @@ class aloha_mac(gras.Block):
 
 	def work(self,ins,outs):
 		
-		while(1):
+		#while(1):
 
 			#Taking packet out of App port and puting them on queue
 			msg=self.pop_input_msg(APP_PORT)
 			pkt_msg=msg()
 			if isinstance(pkt_msg, gras.PacketMsg): 
-				print "msg from app"
+				#print "msg from app ",  pkt_msg.buff.get().tostring()
+				self.msg_from_app+=1
 				self.q.put(pkt_msg.buff.get().tostring())
 
 			if(self.arq_state==ARQ_CHANNEL_IDLE):
@@ -119,6 +122,7 @@ class aloha_mac(gras.Block):
 					print self.source_addr," receiving packet from ",ord(msg_str[PKT_INDEX_DEST])
 
 			if self.arq_state==ARQ_CHANNEL_BUSY:
+				#print "channel_busy",time.time()-self.tx_time
 				if(time.time()-self.tx_time>self.time_out):
 					if(self.no_attempts>self.max_attempts):
 						print "pkt failed arq "
@@ -134,16 +138,27 @@ class aloha_mac(gras.Block):
 						self.no_attempts+=1
 						self.tx_time=time.time()
 						self.total_tx+=1
-
+			print "strange ",self.msg_from_app
 
 	#post msg data to phy port- msg is string
 	def send_pkt_phy(self,msg,pkt_cnt,protocol_id):
 		#Framing MAC Info
 		print "Transmitting packet no. ",pkt_cnt
 		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+msg
-		self.post_output_msg(PHY_PORT,pkt_str)
+
+		#get a reference counted buffer to pass downstream
+		buff = self.get_output_buffer(PHY_PORT)
+		buff.offset = 0
+		buff.length = len(pkt_str)
+		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
+		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
 
 	#post msg data to app port - msg is string
 	def send_pkt_app(self,msg):
 		print "Recieved data packet."
-		self.post_output_msg(APP_PORT,msg)
+ 		#get a reference counted buffer to pass downstream
+		buff = self.get_output_buffer(APP_PORT)
+		buff.offset = 0
+		buff.length = len(msg)
+		buff.get()[:] = numpy.fromstring(msg, numpy.uint8)
+		self.post_output_msg(APP_PORT,gras.PacketMsg(buff))
