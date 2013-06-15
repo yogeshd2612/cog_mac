@@ -34,13 +34,14 @@ MAX_INPUT_QSIZE= 1000
 
 
 
-class aloha_mac(gras.Block):
+class simple_arq(gras.Block):
 	"""
 	two input port : port 0 for phy and port 1 for application 
 	two output port : port 0 for phy and port 1 for application 
+	Stop and wait arq implementation with new message framework of gras motivated from pre-cog
 	"""
 	def __init__(self,dest_addr,source_addr,max_attempts,time_out):
-		gras.Block.__init__(self,name="aloha_mac",
+		gras.Block.__init__(self,name="simple_arq",
 			in_sig = [numpy.uint8,numpy.uint8],
             out_sig = [numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
@@ -76,7 +77,7 @@ class aloha_mac(gras.Block):
 
 	def work(self,ins,outs):
 		
-		#while(1):
+		while(1):
 
 			#Taking packet out of App port and puting them on queue
 			msg=self.pop_input_msg(APP_PORT)
@@ -90,7 +91,7 @@ class aloha_mac(gras.Block):
 				print "In idle state "
 				if not self.q.empty():
 					self.outgoing_msg=self.q.get()
-					print self.outgoing_msg
+					#print self.outgoing_msg
 					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
 					self.no_attempts=1
 					self.total_tx+=1
@@ -120,7 +121,8 @@ class aloha_mac(gras.Block):
 						self.send_pkt_app(msg_str)
 				else:
 					print self.source_addr," receiving packet from ",ord(msg_str[PKT_INDEX_DEST])
-
+			else:
+				print type(pkt_msg)," Not instance of gras.PacketMsg"
 			if self.arq_state==ARQ_CHANNEL_BUSY:
 				#print "channel_busy",time.time()-self.tx_time
 				if(time.time()-self.tx_time>self.time_out):
@@ -138,7 +140,8 @@ class aloha_mac(gras.Block):
 						self.no_attempts+=1
 						self.tx_time=time.time()
 						self.total_tx+=1
-			print "strange ",self.msg_from_app
+
+			print "msg queued up ",self.msg_from_app
 
 	#post msg data to phy port- msg is string
 	def send_pkt_phy(self,msg,pkt_cnt,protocol_id):
@@ -152,7 +155,7 @@ class aloha_mac(gras.Block):
 		buff.length = len(pkt_str)
 		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
 		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
-
+	
 	#post msg data to app port - msg is string
 	def send_pkt_app(self,msg):
 		print "Recieved data packet."
