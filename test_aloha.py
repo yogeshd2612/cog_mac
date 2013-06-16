@@ -12,7 +12,7 @@ import wx
 import gras
 import phy
 import aloha_mac
-import my_block
+import heart_beat
 
 class top_block(grc_wxgui.top_block_gui):
 
@@ -56,8 +56,7 @@ class top_block(grc_wxgui.top_block_gui):
 		#self.extras_stream_to_datagram_1 = grextras.Stream2Datagram(1, 256)
 		#self.extras_datagram_to_stream_1 = grextras.Datagram2Stream(1)
 		
-		
-
+		self.wake_up=heart_beat.heart_beat("check","wake_up",0.1)
 		##################################################
 		# Connections
 		##################################################
@@ -68,6 +67,7 @@ class top_block(grc_wxgui.top_block_gui):
 		self.connect((self.mac_0,1),(self.extras_datagram_to_stream_0,0))
 		self.connect((self.extras_datagram_to_stream_0,0),(self.gr_file_sink_0,0))
 		self.connect((self.cog_phy_0,1),(self.wxgui_fftsink2_0,0))
+		self.connect((self.wake_up,0),(self.mac_0,2))
 
 		"""self.connect((self.gr_file_source_1, 0), (self.extras_stream_to_datagram_1, 0))
 		self.connect((self.extras_stream_to_datagram_1,0),(self.mac_1,1))
