@@ -1,0 +1,6 @@
+#1
+terminate called after throwing an instance of 'boost::interprocess::interprocess_exception'
+  what():  boost::interprocess_exception::library_error
+Aborted
+
+#2
