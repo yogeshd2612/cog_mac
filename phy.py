@@ -11,7 +11,7 @@ import wx
 import gras
 
 class cog_phy(gras.HierBlock):
-	def __init__(self,device_addr="",samp_rate=int(500e3),
+	def __init__(self,device_addr="",samp_rate=int(1000e3),
 		tx_A="TX/RX",rx_A="RX2",tx_gain=15,rx_gain=0,centre_freq=int(990e6),
 		sps=2,bps=1,access_code=""):
 		gras.HierBlock.__init__(self,"cog_phy")
