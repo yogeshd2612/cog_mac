@@ -17,7 +17,7 @@ class top_block(grc_wxgui.top_block_gui):
 		grc_wxgui.top_block_gui.__init__(self, title="Top Block")
 		_icon_path = "/usr/share/icons/hicolor/32x32/apps/gnuradio-grc.png"
 		self.SetIcon(wx.Icon(_icon_path, wx.BITMAP_TYPE_ANY))
-		self.cog_phy=phy.cog_phy("addr=10.32.19.164")
+		self.cog_phy=phy.cog_phy("addr=10.32.19.156")
 
 		self.gr_file_source_0 = gr.file_source(gr.sizeof_char*1, "/home/electron/project/cog-mac/testfile1", True)
 		self.gr_file_sink_0 = gr.file_sink(gr.sizeof_char*1, "/home/electron/project/cog-mac/testOutput")
@@ -40,7 +40,7 @@ class top_block(grc_wxgui.top_block_gui):
 			title="FFT Plot",
 			peak_hold=True,
 		)
-		self.Add(self.wxgui_fftsink2_0.win)
+		#self.Add(self.wxgui_fftsink2_0.win)
 		##################################################
 		# Connections
 		##################################################
