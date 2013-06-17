@@ -47,14 +47,15 @@ class simple_arq(gras.Block):
 		self.input_config(0).reserve_items = 0
 		self.input_config(1).reserve_items = 0
 		self.input_config(2).reserve_items = 0
-		#self.input_config(1).reserve_items = 4096
-		#self.output_config(0).reserve_items = 4096
+		self.output_config(1).reserve_items = 4096
+		self.output_config(0).reserve_items = 4096
 		
 
 		self.dest_addr=dest_addr
 		self.source_addr=source_addr
 		self.max_attempts=max_attempts
 		self.time_out=time_out
+		
 		#state variable
 		self.arq_expected_sequence_no=0
 		self.pkt_retxed=0
@@ -80,6 +81,8 @@ class simple_arq(gras.Block):
 
 	def work(self,ins,outs):
 		#print "mac at work"
+
+		
 		#Taking packet out of App port and puting them on queue
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
@@ -100,22 +103,21 @@ class simple_arq(gras.Block):
 				self.tx_time=time.time()
 				self.arq_state=ARQ_CHANNEL_BUSY
 		
-		# Taking packet out of control port
+		#Taking packet msg out of CTRL port
 		msg=self.pop_input_msg(CTRL_PORT)
 		pkt_msg=msg()
-		if isinstance(pkt_msg, gras.PacketMsg):
-			#wake up time to check time_out for ack
-			#print "its time ..."
-			a=0
-
+		if isinstance(pkt_msg, gras.PacketMsg): 
+			#print "Its time.."
+			a=0 #control
 
 		msg=self.pop_input_msg(PHY_PORT)
 		pkt_msg=msg()
-		if isinstance(pkt_msg, gras.PacketMsg): 
+		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
+			#print "hello ",len(pkt_msg.buff)
 			msg_str=pkt_msg.buff.get().tostring()
-			if(len(msg_str) >3 and ord(msg_str[PKT_INDEX_DEST])==self.source_addr):
-				# if packet is ack
-				#print "i am ",self.source_addr," and rx packet from ",ord(msg_str[PKT_INDEX_DEST])," pkt type : ",ord(msg_str[PKT_INDEX_CNTRL_ID])," seq no. ",ord(msg_str[PKT_INDEX_SEQ])
+
+			if(len(msg_str) >4 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
+				
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
 					if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
 						print "pack tx successfully ",self.arq_expected_sequence_no
@@ -129,6 +131,8 @@ class simple_arq(gras.Block):
 					self.send_pkt_phy("####",ord(msg_str[PKT_INDEX_SEQ]),ACK_PKT)
 					#send pkt to app
 					self.send_pkt_app(msg_str[4:])
+			else:
+				print "len ",len(msg_str)
 		else:
 			#fishy
 			a=0
@@ -169,13 +173,14 @@ class simple_arq(gras.Block):
 		buff.length = len(pkt_str)
 		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
 		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
-	
+			
 	#post msg data to app port - msg is string
 	def send_pkt_app(self,msg):
 		#print "Recieved data packet."
  		#get a reference counted buffer to pass downstream
-		buff = self.get_output_buffer(APP_PORT)
+ 		buff = self.get_output_buffer(APP_PORT)
 		buff.offset = 0
 		buff.length = len(msg)
 		buff.get()[:] = numpy.fromstring(msg, numpy.uint8)
 		self.post_output_msg(APP_PORT,gras.PacketMsg(buff))
+		
