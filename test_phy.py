@@ -48,7 +48,7 @@ class top_block(grc_wxgui.top_block_gui):
 		self.connect((self.extras_stream_to_datagram_0,0),(self.cog_phy,0))
 		self.connect((self.cog_phy,0),(self.extras_datagram_to_stream_0,0))
 		self.connect((self.extras_datagram_to_stream_0,0),(self.gr_file_sink_0,0))
-		self.connect((self.cog_phy,1),(self.wxgui_fftsink2_0,0))
+		#self.connect((self.cog_phy,1),(self.wxgui_fftsink2_0,0))
 def main():
 	tb=top_block()
 	tb.Run(True)
