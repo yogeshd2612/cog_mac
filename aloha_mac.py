@@ -46,7 +46,7 @@ class simple_arq(gras.Block):
             out_sig = [numpy.uint8,numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
 		self.input_config(1).reserve_items = 0
-		self.input_config(2).reserve_items = 1
+		self.input_config(2).reserve_items = 0
 		#self.input_config(1).reserve_items = 4096
 		#self.output_config(0).reserve_items = 4096
 		
@@ -79,7 +79,7 @@ class simple_arq(gras.Block):
 		print "Max Attempts : ",self.max_attempts
 
 	def work(self,ins,outs):
-		
+		#print "mac at work"
 		#Taking packet out of App port and puting them on queue
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
@@ -87,6 +87,7 @@ class simple_arq(gras.Block):
 			#print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
 			self.q.put(pkt_msg.buff.get().tostring())
+
 
 		if(self.arq_state==ARQ_CHANNEL_IDLE):
 			#print "In idle state "
@@ -104,7 +105,8 @@ class simple_arq(gras.Block):
 		pkt_msg=msg()
 		if isinstance(pkt_msg, gras.PacketMsg):
 			#wake up time to check time_out for ack
-			print "its time ..."
+			#print "its time ..."
+			a=0
 
 
 		msg=self.pop_input_msg(PHY_PORT)
@@ -143,7 +145,7 @@ class simple_arq(gras.Block):
 					self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255 
 				else:
 					#retransmit
-					print "Retransmitting : ",self.no_attempts
+					print "Retransmitting : ",self.no_attempts," ",time.time()-self.tx_time," ",self.time_out
 					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,
 						DATA_PKT)
 					self.no_attempts+=1
@@ -155,7 +157,10 @@ class simple_arq(gras.Block):
 	#post msg data to phy port- msg is string
 	def send_pkt_phy(self,msg,pkt_cnt,protocol_id):
 		#Framing MAC Info
-		print "Transmitting packet no. ",pkt_cnt
+		if(protocol_id==ACK_PKT):
+			print "Transmitting ACK no. ",pkt_cnt
+		else:
+			print "Transmitting PKT no. ",pkt_cnt
 		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+msg
 
 		#get a reference counted buffer to pass downstream
@@ -167,7 +172,7 @@ class simple_arq(gras.Block):
 	
 	#post msg data to app port - msg is string
 	def send_pkt_app(self,msg):
-		print "Recieved data packet."
+		#print "Recieved data packet."
  		#get a reference counted buffer to pass downstream
 		buff = self.get_output_buffer(APP_PORT)
 		buff.offset = 0
