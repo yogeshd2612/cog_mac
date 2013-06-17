@@ -38,7 +38,7 @@ class top_block(grc_wxgui.top_block_gui):
 		#self.gr_file_sink_1 = gr.file_sink(gr.sizeof_char*1, "/home/electron/project/cog-mac/testOutput10")
 		self.gr_file_sink_0.set_unbuffered(True)
 		#self.gr_file_sink_1.set_unbuffered(True)
-		self.extras_stream_to_datagram_0 = grextras.Stream2Datagram(1, 128)
+		self.extras_stream_to_datagram_0 = grextras.Stream2Datagram(1, options.pkt_size)
 		self.extras_datagram_to_stream_0 = grextras.Datagram2Stream(1)
 
 		self.wxgui_fftsink2_0 = fftsink2.fft_sink_c(
@@ -101,6 +101,8 @@ def main():
 	                  help="path of input file to transmit")
 	parser.add_option("","--output_file", default="Output",
 	                  help="path of output file to store")
+	parser.add_option("","--pkt_size", type=int, default=128,
+	                  help="set the packet size")
 
 	
 	
