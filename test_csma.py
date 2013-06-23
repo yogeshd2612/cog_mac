@@ -14,7 +14,6 @@ import phy
 import aloha_mac
 import heart_beat
 import sys
-import tags_demo
 import probe
 import csma
 
