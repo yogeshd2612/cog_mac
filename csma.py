@@ -99,6 +99,7 @@ class csma_mac(gras.Block):
 		self.backoff=False
 		self.ack_pending=False
 		self.ack_no=0
+		self.re_tx=False
 		
 	def param(self):
 		print "Destination addr : ",self.dest_addr
@@ -129,6 +130,7 @@ class csma_mac(gras.Block):
 			if not self.q.empty():
 				if(not self.difs_in):
 					self.difs_start=time.time()
+					self.difs_in=True
 				if(time.time()<self.difs_start+self.difs and not self.backoff):
 					if(self.cs_busy()):
 						self.backoff=True
@@ -140,12 +142,16 @@ class csma_mac(gras.Block):
 						if(self.backoff_counter==0):
 							self.backoff=False
 					else:
-						self.outgoing_msg=self.q.get()
+						if(not self.re_tx):
+							self.outgoing_msg=self.q.get()
+							self.no_attempts=1
+						else:
+							self.no_attempts+=1
+						self.tx_time=time.time()		
+						self.total_tx+=1
 						self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
 						self.difs_in=False
-						self.no_attempts=1
-						self.total_tx+=1
-						self.tx_time=time.time()
+						self.re_tx=False
 						self.arq_state=ARQ_CHANNEL_BUSY
 			
 		#Taking packet msg out of CTRL port
@@ -187,9 +193,11 @@ class csma_mac(gras.Block):
 		if(self.ack_pending):
 			if(not self.sifs_in):
 				self.sifs_start=time.time()
+				self.sifs_in=True
 			if(time.time()>self.sifs_st-art+self.sifs and not self.cs_busy()):
 				self.send_pkt_phy("####",self.ack_no,ACK_PKT)
 				self.ack_pending=False
+				self.sifs_in=False
 
 		if self.arq_state==ARQ_CHANNEL_BUSY:
 			#print "channel_busy",time.time()-self.tx_time
@@ -203,10 +211,9 @@ class csma_mac(gras.Block):
 				else:
 					#retransmit
 					print "Retransmitting : ",self.no_attempts," ",time.time()-self.tx_time," ",self.time_out
-					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
-					self.no_attempts+=1
-					self.tx_time=time.time()
-					self.total_tx+=1
+					self.arq_state=ARQ_CHANNEL_IDLE
+					self.re_tx=True
+					
 
 		#print "msg queued up ",self.msg_from_app
 
