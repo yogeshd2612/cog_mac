@@ -90,6 +90,15 @@ class csma_mac(gras.Block):
 		#probe
 		self.probe=probe
 		self.threshold=threshold
+
+		#difs sifs start time
+		self.difs_start=0
+		self.sifs_start=0
+		self.difs_in=False
+		self.sifs_in=False
+		self.backoff=False
+		self.ack_pending=False
+		self.ack_no=0
 		
 	def param(self):
 		print "Destination addr : ",self.dest_addr
@@ -118,14 +127,27 @@ class csma_mac(gras.Block):
 
 			#print "In idle state "
 			if not self.q.empty():
-				self.outgoing_msg=self.q.get()
-				#print self.outgoing_msg
-				self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
-				self.no_attempts=1
-				self.total_tx+=1
-				self.tx_time=time.time()
-				self.arq_state=ARQ_CHANNEL_BUSY
-		
+				if(not self.difs_in):
+					self.difs_start=time.time()
+				if(time.time()<self.difs_start+self.difs and not self.backoff):
+					if(self.cs_busy()):
+						self.backoff=True
+						self.backoff_counter=random.randrange(self.backoff_range)
+				else:
+					if(self.backoff):
+						if(not self.cs_busy()):
+							self.backoff_counter-=1
+						if(self.backoff_counter==0):
+							self.backoff=False
+					else:
+						self.outgoing_msg=self.q.get()
+						self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
+						self.difs_in=False
+						self.no_attempts=1
+						self.total_tx+=1
+						self.tx_time=time.time()
+						self.arq_state=ARQ_CHANNEL_BUSY
+			
 		#Taking packet msg out of CTRL port
 		msg=self.pop_input_msg(CTRL_PORT)
 		pkt_msg=msg()
@@ -152,7 +174,8 @@ class csma_mac(gras.Block):
 				# For data pkts
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
 					#send ack
-					self.send_pkt_phy("####",ord(msg_str[PKT_INDEX_SEQ]),ACK_PKT)
+					self.ack_pending=True
+					self.ack_no=ord(msg_str[PKT_INDEX_SEQ])
 					#send pkt to app
 					self.send_pkt_app(msg_str[4:])
 			else:
@@ -161,7 +184,13 @@ class csma_mac(gras.Block):
 			#fishy
 			a=0
 
-			
+		if(self.ack_pending):
+			if(not self.sifs_in):
+				self.sifs_start=time.time()
+			if(time.time()>self.sifs_st-art+self.sifs and not self.cs_busy()):
+				self.send_pkt_phy("####",self.ack_no,ACK_PKT)
+				self.ack_pending=False
+
 		if self.arq_state==ARQ_CHANNEL_BUSY:
 			#print "channel_busy",time.time()-self.tx_time
 			if(time.time()-self.tx_time>self.time_out):
@@ -193,31 +222,14 @@ class csma_mac(gras.Block):
 		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
 		
 		if(protocol_id==ACK_PKT):
-			sifs_start=time.time()
-			while(time.time()<sifs_start+self.sifs):
-				a=0#wait
-			while(self.check_cs_state()):
-				a=0#wait
 			print "Transmitting ACK no. ",pkt_cnt
 		else:
-			difs_start=time.time()
-			backoff=False
-			while(time.time()<difs_start+self.difs):
-				if(self.check_cs_state()):
-					backoff=True
-					break
-			if backoff:
-				self.backoff_counter=random.randrange(self.backoff_range)
-				while(self.backoff_counter):
-					while(self.check_cs_state()):
-						a=0
-					self.backoff_counter-=1
 			print "Transmitting PKT no. ",pkt_cnt
 
 		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
 			
 	#post msg data to app port - msg is string
-	def check_cs_state(self):
+	def cs_busy(self):
 		return self.probe.level()>self.threshold
 	def send_pkt_app(self,msg):
 		#print "Recieved data packet."
