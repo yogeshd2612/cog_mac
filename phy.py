@@ -11,7 +11,7 @@ import wx
 import gras
 
 class cog_phy(gras.HierBlock):
-	def __init__(self,device_addr="",samp_rate=int(1000e3),
+	def __init__(self,device_addr="",samp_rate=int(200e3),
 		tx_A="TX/RX",rx_A="RX2",tx_gain=15,rx_gain=0,centre_freq=int(990e6),
 		sps=2,bps=1,access_code=""):
 		gras.HierBlock.__init__(self,"cog_phy")
@@ -81,6 +81,7 @@ class cog_phy(gras.HierBlock):
 			log=False,
 		)
 
+		
 		self.gr_multiply_const_vxx_0 = gr.multiply_const_vcc((0.3, ))
 		self.extras_burst_tagger_0 = grextras.BurstTagger(self.sps)
 		##################################################
@@ -96,8 +97,9 @@ class cog_phy(gras.HierBlock):
 		self.connect((self.digital_gmsk_mod, 0), (self.gr_multiply_const_vxx_0,0))
 		self.connect((self.gr_multiply_const_vxx_0,0),(self.extras_burst_tagger_0,0))
 		self.connect((self.extras_burst_tagger_0,0),(self.uhd_usrp_sink, 0))
-		#probe to usrp_source for testing fft of received signal
+		#probe to demodulated values for tag collection
 		self.connect((self.uhd_usrp_source,0),(self,1))
+
 	
 
 	def print_param(self):
