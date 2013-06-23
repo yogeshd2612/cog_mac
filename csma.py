@@ -194,7 +194,7 @@ class csma_mac(gras.Block):
 			if(not self.sifs_in):
 				self.sifs_start=time.time()
 				self.sifs_in=True
-			if(time.time()>self.sifs_st-art+self.sifs and not self.cs_busy()):
+			if(time.time()>self.sifs_start+self.sifs and not self.cs_busy()):
 				self.send_pkt_phy("####",self.ack_no,ACK_PKT)
 				self.ack_pending=False
 				self.sifs_in=False
