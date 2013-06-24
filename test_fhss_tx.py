@@ -14,7 +14,6 @@ import phy
 import fhss_tx
 import heart_beat
 import sys
-import tags_demo
 import time
 
 class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
