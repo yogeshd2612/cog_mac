@@ -48,7 +48,9 @@ class top_block(grc_wxgui.top_block_gui):
 		self.extras_uhd_control_port_0 = grextras.UHDControlPort(options.args)
 		self.sniff_0=adopt_demo.sniff(options.args,self.extras_uhd_control_port_0,self.uhd_usrp_sink_0)
 		
-		self.sniff_0.adopt_element("uhd_control",self.extras_uhd_control_port_0.to_element())
+		#self.sniff_0.adopt_element("uhd_control",self.extras_uhd_control_port_0.to_element())
+		self.adopt_element("uhd_control",self.extras_uhd_control_port_0.to_element())
+		self.adopt_element("sniff_0",self.sniff_0)
 
 		##################################################
 		# Connections

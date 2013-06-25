@@ -12,7 +12,7 @@ class sniff(gras.Block):
 			in_sig = [numpy.complex64],
             out_sig = [numpy.complex64])
 		#locating block
-		self.uhd_control=self.locate_block("uhd_control")
+		self.uhd_control=self.locate_block("../uhd_control")
 		#self.uhd_control=uhd_control
 		self.start=time.time()
 		self.freq_ls=[980e6,990e6]
