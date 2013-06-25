@@ -199,7 +199,7 @@ class csma_mac(gras.Block):
 				self.ack_pending=False
 				self.sifs_in=False
 
-		if self.arq_state==ARQ_CHANNEL_BUSY:
+		if self.arq_state==ARQ_CHANNEL_BUSY and not self.ack_pending:
 			#print "channel_busy",time.time()-self.tx_time
 			if(time.time()-self.tx_time>self.time_out):
 				if(self.no_attempts>self.max_attempts):
