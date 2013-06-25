@@ -33,8 +33,6 @@ class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
 			,3,self.cog_phy_0.uhd_usrp_source,self.cog_phy_0.uhd_usrp_sink)
 		self.wake_up=heart_beat.heart_beat("check","wake_up",0.01)
 		
-		self.gr_file_source_0 = gr.file_source(gr.sizeof_char*1, options.input_file, False)
-		
 		self.gr_file_sink_0 = gr.file_sink(gr.sizeof_char*1, options.output_file)
 		
 		self.gr_file_sink_0.set_unbuffered(True)
@@ -47,8 +45,8 @@ class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
 		##################################################
 		# Connections
 		##################################################
-		self.connect((self.gr_file_source_0, 0), (self.extras_stream_to_datagram_0, 0))
-		self.connect((self.extras_stream_to_datagram_0,0),(self.fhss_rx_0,1))
+		#self.connect((self.gr_file_source_0, 0), (self.extras_stream_to_datagram_0, 0))
+		#self.connect((self.extras_stream_to_datagram_0,0),(self.fhss_rx_0,1))
 		self.connect((self.cog_phy_0,0),(self.fhss_rx_0,0))
 		self.connect((self.fhss_rx_0,0),(self.cog_phy_0,0))
 		self.connect((self.fhss_rx_0,1),(self.extras_datagram_to_stream_0,0))
