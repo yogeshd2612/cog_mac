@@ -51,7 +51,7 @@ class csma_mac(gras.Block):
 	"""
 	def __init__(self,dest_addr,source_addr,max_attempts,time_out,difs,sifs,backoff,probe,threshold):
 		gras.Block.__init__(self,name="csma_mac",
-			in_sig = [numpy.uint8,numpy.uint8,numpy.uint8,numpy.uint8,numpy.uint8],
+			in_sig = [numpy.uint8,numpy.uint8,numpy.uint8,numpy.uint8],
             out_sig = [numpy.uint8,numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
 		self.input_config(1).reserve_items = 0
@@ -109,8 +109,6 @@ class csma_mac(gras.Block):
 	def propagate_tags(self,which_input,iter):
 		for t in iter:
 			a=0
-	def check_cs_state():
-		return True
 	def work(self,ins,outs):
 		#print "mac at work"
 		
@@ -118,15 +116,16 @@ class csma_mac(gras.Block):
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
 		if isinstance(pkt_msg, gras.PacketMsg): 
-			#print "msg from app ",  pkt_msg.buff.get().tostring()
+			print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
 			self.q.put(pkt_msg.buff.get().tostring())
-
+		else:
+			print "Fuck"
 
 		if(self.arq_state==ARQ_CHANNEL_IDLE):
 			
 
-			#print "In idle state "
+			#print "In idle state ",self.msg_from_app,self.difs
 			if not self.q.empty():
 				if(not self.difs_in):
 					self.difs_start=time.time()
@@ -137,11 +136,13 @@ class csma_mac(gras.Block):
 						self.backoff_counter=random.randrange(self.backoff_range)
 				else:
 					if(self.backoff):
-						if(not self.cs_busy()):
+						print "In backoff : ",self.backoff_counter
+						while(not self.cs_busy() and self.backoff_counter>0):
 							self.backoff_counter-=1
 						if(self.backoff_counter==0):
 							self.backoff=False
 					else:
+						print "hello"
 						if(not self.re_tx):
 							self.outgoing_msg=self.q.get()
 							self.no_attempts=1
@@ -191,13 +192,15 @@ class csma_mac(gras.Block):
 			a=0
 
 		if(self.ack_pending):
-			if(not self.sifs_in):
+			'''if(not self.sifs_in):
 				self.sifs_start=time.time()
-				self.sifs_in=True
-			if(time.time()>self.sifs_start+self.sifs and not self.cs_busy()):
-				self.send_pkt_phy("####",self.ack_no,ACK_PKT)
-				self.ack_pending=False
-				self.sifs_in=False
+				self.sifs_in=True'''
+			while(time.time()<self.sifs_start+self.sifs):
+				a=0
+			#if(time.time()>self.sifs_start+self.sifs and not self.cs_busy()):
+			self.send_pkt_phy("####",self.ack_no,ACK_PKT)
+			self.ack_pending=False
+			#self.sifs_in=False
 
 		if self.arq_state==ARQ_CHANNEL_BUSY and not self.ack_pending:
 			#print "channel_busy",time.time()-self.tx_time
