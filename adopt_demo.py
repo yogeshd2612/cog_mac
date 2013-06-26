@@ -11,7 +11,7 @@ class sniff(gras.Block):
 		gras.Block.__init__(self,name="sniffer",
 			in_sig = [numpy.complex64],
             out_sig = [numpy.complex64])
-		#locating block
+		
 		self.freq_ls=[980e6,990e6]
 		self.start=time.time()
 		self.hop_index=0
