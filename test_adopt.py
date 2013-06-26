@@ -46,7 +46,7 @@ class top_block(grc_wxgui.top_block_gui):
 		self.uhd_usrp_sink_0.set_antenna("TX/RX", 0)
 		self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 1000, 1, 0)
 		self.extras_uhd_control_port_0 = grextras.UHDControlPort(options.args)
-		self.sniff_0=adopt_demo.sniff(options.args,self.extras_uhd_control_port_0,self.uhd_usrp_sink_0)
+		self.sniff_0=adopt_demo.sniff()
 		
 		#self.sniff_0.adopt_element("uhd_control",self.extras_uhd_control_port_0.to_element())
 		self.adopt_element("uhd_control",self.extras_uhd_control_port_0.to_element())
