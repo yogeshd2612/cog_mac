@@ -119,9 +119,7 @@ class csma_mac(gras.Block):
 			print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
 			self.q.put(pkt_msg.buff.get().tostring())
-		else:
-			print "Fuck"
-
+		
 		if(self.arq_state==ARQ_CHANNEL_IDLE):
 			
 
