@@ -14,6 +14,7 @@ import phy
 import fhss_tx
 import heart_beat
 import sys
+
 import time
 
 class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
@@ -30,7 +31,7 @@ class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
 		'''self.fhss_tx_0=fhss_tx.fhss_engine_tx(options.dest_addr,options.source_addr,"989.6e6,990e6,990.4e6"
 			,7,0.05,1,0.05,2000,options.args,options.args)'''
 		self.fhss_tx_0=fhss_tx.fhss_engine_tx(options.dest_addr,options.source_addr,"989.6e6,990e6,990.4e6"
-			,3,0.5,0.005,0.05,2000,self.cog_phy_0.uhd_usrp_source,self.cog_phy_0.uhd_usrp_sink)
+			,3,0.5,0.005,0.05,5000,self.cog_phy_0.uhd_usrp_source,self.cog_phy_0.uhd_usrp_sink)
 		self.wake_up=heart_beat.heart_beat("check","wake_up",0.01)
 		
 		self.gr_file_source_0 = gr.file_source(gr.sizeof_char*1, options.input_file, True)
@@ -100,7 +101,7 @@ def main():
 	#tb.Run(True)
 	tb.start()
 	while(1):
-		#print "freq :",tb.cog_phy_0.uhd_usrp_sink.get_center_freq()
+		print "freq trans:",tb.cog_phy_0.uhd_usrp_sink.get_center_freq()
 		time.sleep(2)
 
 	#tb.cog_phy_1.print_param()

@@ -17,27 +17,31 @@ class probe(gras.Block):
 		self.secondary_samples=int(secondary_B/self.fft_step)
 		self.cs_info=[0.0 for i in range(len(self.freq_list))]
 		self.min_freq=center_freq-sense_B/2.0
-
+		self.fft_avg=0.0
 	def work(self,ins,outs):
 		n=len(ins[0])
 		#print "len",len(ins[0][0])
 		for i in range(n):
+			st=0.0
 			x=numpy.concatenate([ins[0][i][self.fft_size/2:],ins[0][i][0:self.fft_size/2]])
+			for j in range(len(x)):
+				print x[j],
 			for j in range(len(self.freq_list)):
 				sample_no=int((self.freq_list[j]-self.min_freq)/self.fft_step)
 				s_left=sample_no-self.secondary_samples/2
 				s_right=sample_no+self.secondary_samples/2
 				#print s_left,s_right,self.freq_list[j],self.secondary_samples,self.fft_step,self.min_freq
 				if(s_left<0 or s_right>=len(x)):
-					print len(x)
-					continue
-					#raise ValueError, "secondary frequency allocation is out of sense band "
+					raise ValueError, "secondary frequency allocation is out of sense band "
 				s=0.0
 				for k in range(s_left,s_right+1):
 					s+=x[k]
 				self.cs_info[j]=s/self.secondary_samples
-				print self.freq_list[j],self.cs_info[j]
+				st+=s
+			self.fft_avg=st/fft_size
+				#print self.freq_list[j],self.cs_info[j]
 		#print self.output
+
 		self.consume(0,n)
 	def level(self):
 		return self.output
@@ -54,3 +58,5 @@ class probe(gras.Block):
 		print "CS Info :"
 		for i in range(len(self.cs_info)):
 			print self.freq_list[i],self.cs_info[i]
+	def fft_avg(self):
+		return self.fft_avg
