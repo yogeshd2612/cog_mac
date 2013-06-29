@@ -25,7 +25,8 @@ PKT_INDEX_DEST = 0
 PKT_INDEX_SRC = 1
 PKT_INDEX_CNTRL_ID = 2     
 PKT_INDEX_SEQ = 3
-PKT_INDEX_TIME =4
+PKT_INDEX_NHOP =4
+
 
 #ARQ Channel States
 ARQ_CHANNEL_BUSY = 1
@@ -83,12 +84,9 @@ class fhss_engine_tx(gras.Block):
 		self.usrp_source=usrpSource
 		self.usrp_sink=usrpSink
 		self.probe=probe
-		self.threshold=1e6
+		self.threshold=1e-3
 
-		self.last_time=0.0
-		self.prev_freq=0.0
-
-
+		
 	def param(self):
 		print "Destination addr : ",self.dest_addr
 		print "Source addr : ",self.source_addr
@@ -104,9 +102,9 @@ class fhss_engine_tx(gras.Block):
 		self.usrp_sink.set_center_freq(self.freq_list[self.hop_index])
 		self.usrp_sink.clear_command_time()
 		self.usrp_sink.set_command_time(uhd.time_spec_t(self.antenna_start))
-		self.hop_index=(self.hop_index+1)%(len(self.freq_list))	
-		print self.antenna_start,self.usrp_sink.get_time_now().get_real_secs()
-		print self.usrp_sink.get_center_freq()
+		
+		#print self.antenna_start,self.usrp_sink.get_time_now().get_real_secs()
+		print "Hopping to : ",self.usrp_sink.get_center_freq()
 
 		#put residue from previous execution
 		if self.has_old_msg:
@@ -141,21 +139,13 @@ class fhss_engine_tx(gras.Block):
 		#print self.msg_from_app
 		#Taking packet out of App port and puting them on queue
 		#self.probe.print_cs_info()
-		#print self.freq_list[self.probe.worst_band()],self.prev_freq
-		if(self.freq_list[self.probe.worst_band()]!=self.prev_freq):
-			f=self.probe.worst_band()
-			print "Hoping to : ",self.freq_list[f],self.probe.cs_info[f]
-			self.prev_freq=self.freq_list[f]
-		
-
-		#self.probe.print_fft_avg()
 		 
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
 		if isinstance(pkt_msg, gras.PacketMsg): 
 			#print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
-			#self.q.put(pkt_msg.buff.get().tostring())
+			self.q.put(pkt_msg.buff.get().tostring())
 
 		#Taking packet msg out of CTRL port
 		msg=self.pop_input_msg(CTRL_PORT)
@@ -170,21 +160,28 @@ class fhss_engine_tx(gras.Block):
 		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
 			#print "hello ",len(pkt_msg.buff)
 			msg_str=pkt_msg.buff.get().tostring()
-			
+			#its transmitter handling only tx
 
 		#determine first transmit slot
 		if not self.start:
-			self.start=True
-			self.time_transmit_start=self.usrp_sink.get_time_now().get_real_secs()+10.0*self.lead_limit
-			self.interval_start=self.usrp_sink.get_time_now().get_real_secs()+self.lead_limit
+			self.hop_index,interference=self.probe.best_band()
+			if(interference<self.threshold):
+				self.start=True
+				self.time_transmit_start=self.usrp_sink.get_time_now().get_real_secs()+10.0*self.lead_limit
+				self.interval_start=self.usrp_sink.get_time_now().get_real_secs()+self.lead_limit
 		else:
 			if( self.usrp_sink.get_time_now().get_real_secs()>self.time_transmit_start):
-				#print self.time_update,self.usrp_sink.get_time_now().get_real_secs(),self.time_transmit_start
-				self.antenna_start = self.interval_start+self.post_guard
-				#print self.usrp_sink.get_time_now().get_real_secs(),self.antenna_start,self.time_transmit_start
-				#self.tx_frames()
-				self.interval_start+=self.hop_interval
-				self.time_transmit_start=self.interval_start-self.lead_limit
+				
+				if(self.probe.cs_info[self.hop_index]<threshold):
+					#print self.time_update,self.usrp_sink.get_time_now().get_real_secs(),self.time_transmit_start
+					#print self.usrp_sink.get_time_now().get_real_secs(),self.antenna_start,self.time_transmit_start
+					self.antenna_start = self.interval_start+self.post_guard
+					self.tx_frames()
+					self.interval_start+=self.hop_interval
+					self.time_transmit_start=self.interval_start-self.lead_limit
+				else:
+					print "Sync Lost ..."
+					self.start=False
 
 	
 	#post msg data to phy port- msg is string
@@ -194,7 +191,8 @@ class fhss_engine_tx(gras.Block):
 			print "Transmitting ACK no. ",pkt_cnt
 		else:
 			print "Transmitting PKT no. ",pkt_cnt
-		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+msg
+		self.hop_index,interference=self.probe.best_band()
+		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+chr(self.hop_index)+msg
 
 		#get a reference counted buffer to pass downstream
 		buff = self.get_output_buffer(PHY_PORT)
