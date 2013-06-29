@@ -138,7 +138,7 @@ class fhss_engine_tx(gras.Block):
 		#print self.msg_from_app
 		#Taking packet out of App port and puting them on queue
 		#self.probe.print_cs_info()
-		print "FFT avg :"self.probe.fft_avg()
+		print "FFT avg :",self.probe.fft_avg()
 		time.sleep(2)
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
