@@ -127,7 +127,7 @@ class fhss_engine_tx(gras.Block):
 			msg=self.tx_queue.get()
 			#print "sending"
 			self.send_pkt_phy(msg,self.pkt_count,DATA_PKT)
-			self.pkt_count=(self.pkt_count+1)%256
+			self.pkt_count+=1
 			frame_count-=1
 		
 	

@@ -4,7 +4,6 @@ import time
 from PMC import *
 from math import pi
 import Queue
-import time
 import thread
 
 # cntrl commands
@@ -18,6 +17,7 @@ BROADCAST_ADDR = 255
 PHY_PORT=0
 APP_PORT=1
 CTRL_PORT=2
+
 
 #Packet index definitions
 PKT_INDEX_DEST = 0
@@ -36,17 +36,18 @@ MAX_INPUT_QSIZE= 1000
 
 class simple_arq(gras.Block):
 	"""
-	three input port : port 0 for phy ; port 1 for application ; port 2 for ctrl
-	two output port : port 0 for phy , port 1 for application , port 2 for ctrl
+	four input port : port 0 for phy ; port 1 for application ; port 2 for ctrl ; 
+	three output port : port 0 for phy , port 1 for application , port 2 for ctrl
 	Stop and wait arq implementation with new message framework of gras motivated from pre-cog
 	"""
-	def __init__(self,dest_addr,source_addr,max_attempts,time_out):
+	def __init__(self,dest_addr,source_addr,max_attempts,time_out,probe):
 		gras.Block.__init__(self,name="simple_arq",
 			in_sig = [numpy.uint8,numpy.uint8,numpy.uint8],
             out_sig = [numpy.uint8,numpy.uint8,numpy.uint8])
 		self.input_config(0).reserve_items = 0
 		self.input_config(1).reserve_items = 0
 		self.input_config(2).reserve_items = 0
+		
 		self.output_config(1).reserve_items = 4096
 		self.output_config(0).reserve_items = 4096
 		
@@ -55,7 +56,7 @@ class simple_arq(gras.Block):
 		self.source_addr=source_addr
 		self.max_attempts=max_attempts
 		self.time_out=time_out
-		
+
 		#state variable
 		self.arq_expected_sequence_no=0
 		self.pkt_retxed=0
@@ -72,21 +73,26 @@ class simple_arq(gras.Block):
 		self.q=Queue.Queue()
 		self.msg_from_app=0
 		self.a=0
+
+		#locating probe
+		self.probe=probe
 		
 	def param(self):
 		print "Destination addr : ",self.dest_addr
 		print "Source addr : ",self.source_addr
 		print "TimeOut : ",self.time_out
 		print "Max Attempts : ",self.max_attempts
-
+	def propagate_tags(self,which_input,iter):
+		for t in iter:
+			a=0
 	def work(self,ins,outs):
 		#print "mac at work"
-
-		
+		#print self.probe.get("level")
 		#Taking packet out of App port and puting them on queue
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
-		if isinstance(pkt_msg, gras.PacketMsg): 
+		#if isinstance(pkt_msg, gras.PacketMsg): 
+		if(pkt_msg):
 			#print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
 			self.q.put(pkt_msg.buff.get().tostring())
@@ -106,16 +112,18 @@ class simple_arq(gras.Block):
 		#Taking packet msg out of CTRL port
 		msg=self.pop_input_msg(CTRL_PORT)
 		pkt_msg=msg()
-		if isinstance(pkt_msg, gras.PacketMsg): 
+		#if isinstance(pkt_msg, gras.PacketMsg): 
+		if(pkt_msg):
 			#print "Its time.."
 			a=0 #control
 
 		msg=self.pop_input_msg(PHY_PORT)
 		pkt_msg=msg()
-		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
-			#print "hello ",len(pkt_msg.buff)
-			msg_str=pkt_msg.buff.get().tostring()
 
+		#if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
+		if(pkt_msg):
+			msg_str=pkt_msg.buff.get().tostring()
+			#print msg_str
 			if(len(msg_str) >4 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
 				
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
@@ -150,8 +158,7 @@ class simple_arq(gras.Block):
 				else:
 					#retransmit
 					print "Retransmitting : ",self.no_attempts," ",time.time()-self.tx_time," ",self.time_out
-					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,
-						DATA_PKT)
+					self.send_pkt_phy(self.outgoing_msg,self.arq_expected_sequence_no,DATA_PKT)
 					self.no_attempts+=1
 					self.tx_time=time.time()
 					self.total_tx+=1

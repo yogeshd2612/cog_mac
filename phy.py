@@ -11,18 +11,16 @@ import wx
 import gras
 
 class cog_phy(gras.HierBlock):
-	def __init__(self,device_addr="",samp_rate=int(200e3),
-		tx_A="TX/RX",rx_A="RX2",tx_gain=15,rx_gain=0,centre_freq=int(990e6),
-		sps=2,bps=1,access_code=""):
+	def __init__(self,device_addr="",samp_rate_rx=int(1e6),samp_rate_tx=int(1e6),center_freq=int(990e6),
+		tx_A="TX/RX",rx_A="RX2",tx_gain=15,rx_gain=0,sps=2,bps=1,access_code=""):
 		gras.HierBlock.__init__(self,"cog_phy")
 		#
 		self.device_addr=device_addr
-		self.samp_rate=samp_rate
 		self.tx_A=tx_A
 		self.rx_A=rx_A
 		self.tx_gain=tx_gain
 		self.rx_gain=rx_gain
-		self.centre_freq=centre_freq
+		self.center_freq=center_freq
 		self.sps=sps
 		self.bps=bps
 		self.access_code=access_code
@@ -35,8 +33,8 @@ class cog_phy(gras.HierBlock):
 				channels=range(1),
 			),
 		)
-		self.uhd_usrp_source.set_samp_rate(samp_rate)
-		self.uhd_usrp_source.set_center_freq(centre_freq, 0)
+		self.uhd_usrp_source.set_samp_rate(samp_rate_rx)
+		self.uhd_usrp_source.set_center_freq(center_freq, 0)
 		self.uhd_usrp_source.set_gain(rx_gain, 0)
 		self.uhd_usrp_source.set_antenna(rx_A, 0)
 		self.uhd_usrp_sink = uhd.usrp_sink(
@@ -46,8 +44,8 @@ class cog_phy(gras.HierBlock):
 				channels=range(1),
 			),
 		)
-		self.uhd_usrp_sink.set_samp_rate(samp_rate)
-		self.uhd_usrp_sink.set_center_freq(centre_freq, 0)
+		self.uhd_usrp_sink.set_samp_rate(samp_rate_tx)
+		self.uhd_usrp_sink.set_center_freq(center_freq, 0)
 		self.uhd_usrp_sink.set_gain(tx_gain, 0)
 		self.uhd_usrp_sink.set_antenna(tx_A, 0)
 
@@ -99,18 +97,18 @@ class cog_phy(gras.HierBlock):
 		self.connect((self.extras_burst_tagger_0,0),(self.uhd_usrp_sink, 0))
 		#probe to demodulated values for tag collection
 		self.connect((self.uhd_usrp_source,0),(self,1))
+		
 
 	
 
 	def print_param(self):
 		print "Parameters :"
 		print "Device_addr : ",self.device_addr
-		print "Sample rate : ",self.samp_rate
 		print " Transmitting Antenna : ",self.tx_A
 		print "Receiving Antenna : ",self.rx_A
 		print "Trasmitting Antenna gain : ",self.tx_gain
 		print "Receiving Antenna gain : ",self.rx_gain
-		print "Freq of operation : ",self.centre_freq
+		print "Freq of operation : ",self.center_freq
 		print "Sample per symbol : ",self.sps
 		print "Bits per symbol : ",self.bps
 		print "Access code (framer): ",self.access_code

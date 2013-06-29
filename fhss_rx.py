@@ -89,6 +89,7 @@ class fhss_engine_rx(gras.Block):
 		#Taking packet out of App port and puting them on queue
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
+		#print "Working"
 		if isinstance(pkt_msg, gras.PacketMsg): 
 			#print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
