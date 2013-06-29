@@ -111,7 +111,7 @@ class fhss_engine_rx(gras.Block):
 		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
 			#print "hello ",len(pkt_msg.buff)
 			msg_str=pkt_msg.buff.get().tostring()
-			if(len(msg_str) >4 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
+			if(len(msg_str) >5 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
 				if(not self.start):
 					print "Starting sync operation ..."
 					self.start=True
@@ -127,7 +127,7 @@ class fhss_engine_rx(gras.Block):
 					self.hop_index=ord(msg_str[PKT_INDEX_NHOP])
 					self.pkt_received+=1					
 					#send pkt to app
-					self.send_pkt_app(msg_str[4:])
+					self.send_pkt_app(msg_str[5:])
 			else:
 				print "len ",len(msg_str)
 		else:
@@ -144,7 +144,6 @@ class fhss_engine_rx(gras.Block):
 				print "hopping to : ",self.freq_list[self.hop_index]
 				self.usrp_source.set_center_freq(self.freq_list[self.hop_index])
 				self.last_hop_time=self.usrp_source.get_time_now().get_real_secs()
-				self.hop_index=(self.hop_index+1)%(len(self.freq_list))
 				self.pkt_received=0
 
 	
