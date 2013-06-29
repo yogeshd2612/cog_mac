@@ -60,7 +60,7 @@ class fhss_engine_tx(gras.Block):
 		self.pre_guard = pre_guard
 		self.lead_limit = lead_limit
 		self.link_bps = link_bps
-		self.freq_list = map(float,freq_list.split(','))
+		self.freq_list = sorted(map(float,freq_list.split(',')))
 		self.hop_index = 0 	
 		
 		self.bytes_per_slot = int( ( self.hop_interval - self.post_guard - self.pre_guard ) * self.link_bps / 8 )
@@ -84,6 +84,9 @@ class fhss_engine_tx(gras.Block):
 		self.usrp_sink=usrpSink
 		self.probe=probe
 		self.threshold=1e6
+
+		self.last_time=0.0
+		self.prev_freq=0.0
 
 
 	def param(self):
@@ -138,8 +141,15 @@ class fhss_engine_tx(gras.Block):
 		#print self.msg_from_app
 		#Taking packet out of App port and puting them on queue
 		#self.probe.print_cs_info()
-		print "FFT avg :",self.probe.fft_avg()
-		time.sleep(2)
+		#print self.freq_list[self.probe.worst_band()],self.prev_freq
+		if(self.freq_list[self.probe.worst_band()]!=self.prev_freq):
+			f=self.probe.worst_band()
+			print "Hoping to : ",self.freq_list[f],self.probe.cs_info[f]
+			self.prev_freq=self.freq_list[f]
+		
+
+		#self.probe.print_fft_avg()
+		 
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
 		if isinstance(pkt_msg, gras.PacketMsg): 

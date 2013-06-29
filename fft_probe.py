@@ -40,8 +40,7 @@ class probe(gras.Block):
 					s+=x[k]
 				self.cs_info[j]=s/self.secondary_samples
 				st+=s
-				print self.freq_list[j],self.cs_info[j],s_left,s_right
-			print	
+				#print self.freq_list[j],self.cs_info[j],s_left,s_right
 			self.fft_avg=st/self.fft_size
 				
 		#print self.output
@@ -57,6 +56,14 @@ class probe(gras.Block):
 				min_I=self.cs_info[i]
 				fid=i
 
+		return fid
+	def worst_band(self):
+		max_I=1e-9
+		fid=0
+		for i in range(len(self.cs_info)):
+			if(self.cs_info[i]>max_I ):
+				max_I=self.cs_info[i]
+				fid=i
 		return fid
 	def print_cs_info(self):
 		print "CS Info :"

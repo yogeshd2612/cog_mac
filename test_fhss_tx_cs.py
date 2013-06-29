@@ -27,7 +27,7 @@ class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
 		
 		#sensing chain
 		self.cs_0=spectrum_sense.pwrfft_c(options.sample_rate,options.fft_size,
-								options.sample_rate/(options.fft_size*4),1,False)
+								options.sample_rate/(options.fft_size*8),1,False)
 		
 		self.probe_0=fft_probe.probe(options.fft_size,options.sense_band,options.sample_rate,"977e6,978.5e6,980e6,981.5e6,983e6",options.freq)
 		#
