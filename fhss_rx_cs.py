@@ -111,7 +111,7 @@ class fhss_engine_rx(gras.Block):
 		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
 			#print "hello ",len(pkt_msg.buff)
 			msg_str=pkt_msg.buff.get().tostring()
-			if(len(msg_str) >4 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
+			if(len(msg_str) >5 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
 				if(not self.start):
 					print "Starting sync operation ..."
 					self.start=True
@@ -127,7 +127,7 @@ class fhss_engine_rx(gras.Block):
 					self.hop_index=ord(msg_str[PKT_INDEX_NHOP])
 					self.pkt_received+=1					
 					#send pkt to app
-					self.send_pkt_app(msg_str[4:])
+					self.send_pkt_app(msg_str[5:])
 			else:
 				print "len ",len(msg_str)
 		else:
@@ -144,26 +144,8 @@ class fhss_engine_rx(gras.Block):
 				print "hopping to : ",self.freq_list[self.hop_index]
 				self.usrp_source.set_center_freq(self.freq_list[self.hop_index])
 				self.last_hop_time=self.usrp_source.get_time_now().get_real_secs()
-				self.hop_index=(self.hop_index+1)%(len(self.freq_list))
 				self.pkt_received=0
 
-	
-	#post msg data to phy port- msg is string
-	def send_pkt_phy(self,msg,pkt_cnt,protocol_id):
-		#Framing MAC Info
-		if(protocol_id==ACK_PKT):
-			print "Transmitting ACK no. ",pkt_cnt
-		else:
-			print "Transmitting PKT no. ",pkt_cnt
-		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+msg
-
-		#get a reference counted buffer to pass downstream
-		buff = self.get_output_buffer(PHY_PORT)
-		buff.offset = 0
-		buff.length = len(pkt_str)
-		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
-		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
-			
 	#post msg data to app port - msg is string
 	def send_pkt_app(self,msg):
 		#print "Recieved data packet."
