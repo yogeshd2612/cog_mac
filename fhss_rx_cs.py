@@ -146,23 +146,6 @@ class fhss_engine_rx(gras.Block):
 				self.last_hop_time=self.usrp_source.get_time_now().get_real_secs()
 				self.pkt_received=0
 
-	
-	#post msg data to phy port- msg is string
-	def send_pkt_phy(self,msg,pkt_cnt,protocol_id):
-		#Framing MAC Info
-		if(protocol_id==ACK_PKT):
-			print "Transmitting ACK no. ",pkt_cnt
-		else:
-			print "Transmitting PKT no. ",pkt_cnt
-		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+msg
-
-		#get a reference counted buffer to pass downstream
-		buff = self.get_output_buffer(PHY_PORT)
-		buff.offset = 0
-		buff.length = len(pkt_str)
-		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
-		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
-			
 	#post msg data to app port - msg is string
 	def send_pkt_app(self,msg):
 		#print "Recieved data packet."
