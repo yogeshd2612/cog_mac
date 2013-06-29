@@ -56,7 +56,7 @@ class probe(gras.Block):
 				min_I=self.cs_info[i]
 				fid=i
 
-		return fid
+		return (fid,self.cs_info[fid])
 	def worst_band(self):
 		max_I=1e-9
 		fid=0
@@ -64,7 +64,7 @@ class probe(gras.Block):
 			if(self.cs_info[i]>max_I ):
 				max_I=self.cs_info[i]
 				fid=i
-		return fid
+		return (fid,self.cs_info[fid])
 	def print_cs_info(self):
 		print "CS Info :"
 		for i in range(len(self.cs_info)):
