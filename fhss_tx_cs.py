@@ -85,6 +85,7 @@ class fhss_engine_tx(gras.Block):
 		self.usrp_sink=usrpSink
 		self.probe=probe
 		self.threshold=1e-3
+		self.current_hid=0
 
 		
 	def param(self):
@@ -104,6 +105,7 @@ class fhss_engine_tx(gras.Block):
 		self.usrp_sink.set_command_time(uhd.time_spec_t(self.antenna_start))
 		
 		#print self.antenna_start,self.usrp_sink.get_time_now().get_real_secs()
+		self.current_hid=self.hop_index
 		print "Hopping to : ",self.usrp_sink.get_center_freq()
 
 		#put residue from previous execution
@@ -172,7 +174,7 @@ class fhss_engine_tx(gras.Block):
 		else:
 			if( self.usrp_sink.get_time_now().get_real_secs()>self.time_transmit_start):
 				
-				if(self.probe.cs_info[self.hop_index]<threshold):
+				if(self.probe.cs_info[self.hop_index]<self.threshold):
 					#print self.time_update,self.usrp_sink.get_time_now().get_real_secs(),self.time_transmit_start
 					#print self.usrp_sink.get_time_now().get_real_secs(),self.antenna_start,self.time_transmit_start
 					self.antenna_start = self.interval_start+self.post_guard
@@ -191,7 +193,7 @@ class fhss_engine_tx(gras.Block):
 			print "Transmitting ACK no. ",pkt_cnt
 		else:
 			print "Transmitting PKT no. ",pkt_cnt
-		self.hop_index,interference=self.probe.best_band()
+		self.hop_index,interference=self.probe.best_band(self.current_hid)
 		pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(protocol_id)+chr(pkt_cnt)+chr(self.hop_index)+msg
 
 		#get a reference counted buffer to pass downstream
