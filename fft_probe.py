@@ -24,8 +24,10 @@ class probe(gras.Block):
 		for i in range(n):
 			st=0.0
 			x=numpy.concatenate([ins[0][i][self.fft_size/2:],ins[0][i][0:self.fft_size/2]])
-			for j in range(len(x)):
-				print x[j],
+			'''for j in range(len(x)):
+				print x[j]
+			print "Next" '''
+
 			for j in range(len(self.freq_list)):
 				sample_no=int((self.freq_list[j]-self.min_freq)/self.fft_step)
 				s_left=sample_no-self.secondary_samples/2
@@ -38,8 +40,10 @@ class probe(gras.Block):
 					s+=x[k]
 				self.cs_info[j]=s/self.secondary_samples
 				st+=s
-			self.fft_avg=st/fft_size
-				#print self.freq_list[j],self.cs_info[j]
+				print self.freq_list[j],self.cs_info[j],s_left,s_right
+			print	
+			self.fft_avg=st/self.fft_size
+				
 		#print self.output
 
 		self.consume(0,n)
@@ -58,5 +62,5 @@ class probe(gras.Block):
 		print "CS Info :"
 		for i in range(len(self.cs_info)):
 			print self.freq_list[i],self.cs_info[i]
-	def fft_avg(self):
-		return self.fft_avg
+	def print_fft_avg(self):
+		print "FFT avg :", self.fft_avg
