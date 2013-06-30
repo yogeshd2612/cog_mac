@@ -21,7 +21,7 @@ BROADCAST_ADDR = 255
 PHY_PORT=0
 APP_PORT=1
 CTRL_PORT=2
-TAGS_PORT=3
+PROBE_PORT=3
 
 
 #Packet index definitions
@@ -111,12 +111,12 @@ class csma_mac(gras.Block):
 			a=0
 	def work(self,ins,outs):
 		#print "mac at work"
-		
+		#print self.probe.level()
 		#Taking packet out of App port and puting them on queue
 		msg=self.pop_input_msg(APP_PORT)
 		pkt_msg=msg()
 		if isinstance(pkt_msg, gras.PacketMsg): 
-			print "msg from app ",  pkt_msg.buff.get().tostring()
+			#print "msg from app ",  pkt_msg.buff.get().tostring()
 			self.msg_from_app+=1
 			self.q.put(pkt_msg.buff.get().tostring())
 		
@@ -134,13 +134,13 @@ class csma_mac(gras.Block):
 						self.backoff_counter=random.randrange(self.backoff_range)
 				else:
 					if(self.backoff):
-						print "In backoff : ",self.backoff_counter
+						#print "In backoff : ",self.backoff_counter
 						while(not self.cs_busy() and self.backoff_counter>0):
 							self.backoff_counter-=1
 						if(self.backoff_counter==0):
 							self.backoff=False
 					else:
-						print "hello"
+						#print "hello"
 						if(not self.re_tx):
 							self.outgoing_msg=self.q.get()
 							self.no_attempts=1
@@ -166,12 +166,12 @@ class csma_mac(gras.Block):
 		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
 			#print "hello ",len(pkt_msg.buff)
 			msg_str=pkt_msg.buff.get().tostring()
-
+			#print "Received something"
 			if(len(msg_str) >4 and (ord(msg_str[PKT_INDEX_DEST])==self.source_addr or ord(msg_str[PKT_INDEX_DEST])==BROADCAST_ADDR)):
 				
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
 					if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
-						print "pack tx successfully ",self.arq_expected_sequence_no
+						#print "pack tx successfully ",self.arq_expected_sequence_no
 						self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255
 						self.total_pkt_txed+=1
 						self.arq_state=ARQ_CHANNEL_IDLE
@@ -233,7 +233,6 @@ class csma_mac(gras.Block):
 			print "Transmitting ACK no. ",pkt_cnt
 		else:
 			print "Transmitting PKT no. ",pkt_cnt
-
 		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
 			
 	#post msg data to app port - msg is string
@@ -247,4 +246,4 @@ class csma_mac(gras.Block):
 		buff.length = len(msg)
 		buff.get()[:] = numpy.fromstring(msg, numpy.uint8)
 		self.post_output_msg(APP_PORT,gras.PacketMsg(buff))
-		
+			

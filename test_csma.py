@@ -27,9 +27,10 @@ class top_block(grc_wxgui.top_block_gui):
 		#CHANGE ME
 		self.cog_phy_0=phy.cog_phy(options.args)
 		# dest_addt,source_addr,max_attempts,time_out
-		self.probe_0=probe.probe(0,1)
+		#self.probe_0=probe.probe(0,1)
+		self.probe_0=gr.probe_avg_mag_sqrd_c(-30)
 		#self.ss_chain_0=spectrum_sense.pwrfft_c(200e3,1024,25,)
-		self.mac_0=csma.csma_mac(options.dest_addr,options.source_addr,options.max_attempts,options.time_out,0.05,0.00001,10000,self.probe_0,1e-6)
+		self.mac_0=csma.csma_mac(options.dest_addr,options.source_addr,options.max_attempts,options.time_out,0.05,0.0001,10000,self.probe_0,1e-6)
 		self.wake_up=heart_beat.heart_beat("check","wake_up",0.001)
 		
 		#CHANGE ME
@@ -75,11 +76,9 @@ class top_block(grc_wxgui.top_block_gui):
 		self.connect((self.extras_datagram_to_stream_0,0),(self.gr_file_sink_0,0))
 		#self.connect((self.cog_phy_0,1),(self.wxgui_fftsink2_0,0))
 		self.connect((self.wake_up,0),(self.mac_0,2))
-		self.connect((self.cog_phy_0,1),(self.probe_0,0))
-		#self.connect((self.cog_phy_0,1),())
 		#self.connect((self.cog_phy_0,1),(self.mac_0,3))
-		#self.connect((self.cog_phy_0,1),(self.tags_d_0,0))
-
+		self.connect((self.cog_phy_0,1),(self.probe_0,0))
+		
 		"""self.connect((self.gr_file_source_1, 0), (self.extras_stream_to_datagram_1, 0))
 		self.connect((self.extras_stream_to_datagram_1,0),(self.mac_1,1))
 		self.connect((self.cog_phy_1,0),(self.mac_1,0))
