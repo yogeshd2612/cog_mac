@@ -43,7 +43,7 @@ RX_INIT = 0
 RX_SEARCH = 1
 RX_FOUND = 2
 
-
+LOST_SYNC_THRESHOLD=0
 class fhss_engine_rx(gras.Block):
 	"""
 	three input port : port 0 for phy ; port 1 for application ; port 2 for ctrl ; 
@@ -78,6 +78,7 @@ class fhss_engine_rx(gras.Block):
 		self.usrp_source=usrpSource
 		self.usrp_sink=usrpSink
 
+		self.pkt_received=0
 
 	def param(self):
 		print "Destination addr : ",self.dest_addr
@@ -114,11 +115,13 @@ class fhss_engine_rx(gras.Block):
 					self.start=True
 					self.last_hop_time=self.usrp_source.get_time_now().get_real_secs()
 					self.hop_index=(self.hop_index+1)%(len(self.freq_list))
+					self.pkt_received=1
 
 				# For data pkts
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
 					print "Received data pkt at freq : ",self.freq_list[self.hop_index-1]
 					#send pkt to app
+					self.pkt_received+=1
 					self.send_pkt_app(msg_str[4:])
 			else:
 				print "len ",len(msg_str)
@@ -129,10 +132,15 @@ class fhss_engine_rx(gras.Block):
 
 		#HOP
 		if(self.start and self.usrp_source.get_time_now().get_real_secs()>self.last_hop_time+self.hop_interval):
-			print "hopping to : ",self.freq_list[self.hop_index]
-			self.usrp_source.set_center_freq(self.freq_list[self.hop_index])
-			self.last_hop_time=self.usrp_source.get_time_now().get_real_secs()
-			self.hop_index=(self.hop_index+1)%(len(self.freq_list))
+			if(self.pkt_received>LOST_SYNC_THRESHOLD):
+				self.usrp_source.set_center_freq(self.freq_list[self.hop_index])
+				print "hopping to : ",self.usrp_source.get_center_freq()
+				self.last_hop_time=self.usrp_source.get_time_now().get_real_secs()
+				self.hop_index=(self.hop_index+1)%(len(self.freq_list))
+				self.pkt_received=0
+			else:
+				print "Lost Sync..."
+				self.start=False
 
 
 			
