@@ -31,7 +31,7 @@ class top_block(grc_wxgui.top_block_gui):
 		# Blocks
 		##################################################
 		self.uhd_usrp_source = uhd.usrp_source(
-			device_addr=self.device_addr,
+			device_addr=options.args,
 			stream_args=uhd.stream_args(
 				cpu_format="fc32",
 				channels=range(1),
