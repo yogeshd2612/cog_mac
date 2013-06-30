@@ -48,20 +48,20 @@ class probe(gras.Block):
 		self.consume(0,n)
 	def level(self):
 		return self.output
-	def best_band(self):
+	def best_band(self , nid=-1):
 		min_I=1e6
 		fid=0
 		for i in range(len(self.cs_info)):
-			if(self.cs_info[i]<min_I):
+			if(self.cs_info[i]<min_I and nid!=i):
 				min_I=self.cs_info[i]
 				fid=i
 
 		return (fid,self.cs_info[fid])
-	def worst_band(self):
+	def worst_band(self,nid=-1):
 		max_I=1e-9
 		fid=0
 		for i in range(len(self.cs_info)):
-			if(self.cs_info[i]>max_I ):
+			if(self.cs_info[i]>max_I and nid!=i):
 				max_I=self.cs_info[i]
 				fid=i
 		return (fid,self.cs_info[fid])
