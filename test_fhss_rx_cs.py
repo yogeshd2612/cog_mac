@@ -26,7 +26,7 @@ class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
 		#CHAN
 		#gras.TopBlock.__init__(self, "test_fhss_block")
 		#CHANGE ME
-		self.cog_phy_0=phy.cog_phy(options.args)
+		self.cog_phy_0=phy.cog_phy(device_addr=options.args,center_freq=options.freq)
 		# dest_addt,source_addr,max_attempts,time_out
 		'''self.fhss_tx_0=fhss_tx.fhss_engine_tx(options.dest_addr,options.source_addr,"989.6e6,990e6,990.4e6"
 			,7,0.05,1,0.05,2000,options.args,options.args)'''
@@ -79,6 +79,8 @@ def main():
 	                  help="path of output file to store")
 	parser.add_option("","--pkt_size", type=int, default=128,
 	                  help="set the packet size [default=128]")
+	parser.add_option("","--freq", type=int, default=980e6,
+	                  help="set initial freq [default=980e6]")
 
 	
 	
