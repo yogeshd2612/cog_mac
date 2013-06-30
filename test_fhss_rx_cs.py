@@ -30,7 +30,7 @@ class top_block(grc_wxgui.top_block_gui):#grc_wxgui.top_block_gui
 		# dest_addt,source_addr,max_attempts,time_out
 		'''self.fhss_tx_0=fhss_tx.fhss_engine_tx(options.dest_addr,options.source_addr,"989.6e6,990e6,990.4e6"
 			,7,0.05,1,0.05,2000,options.args,options.args)'''
-		self.fhss_rx_0=fhss_rx_cs.fhss_engine_rx(options.dest_addr,options.source_addr,"989.6e6,990e6,990.4e6"
+		self.fhss_rx_0=fhss_rx_cs.fhss_engine_rx(options.dest_addr,options.source_addr,"977e6,978.5e6,980e6,981.5e6,983e6"
 			,3,self.cog_phy_0.uhd_usrp_source,self.cog_phy_0.uhd_usrp_sink)
 		self.wake_up=heart_beat.heart_beat("check","wake_up",0.01)
 		
@@ -88,9 +88,6 @@ def main():
 		print "give path of input file to transmit"
 		parser.print_help()
 		sys.exit(1)
-	uhd_control_source = grextras.UHDControlPort(options.args)
-	uhd_control_sink = grextras.UHDControlPort(options.args)
-
 	tb=top_block(options)
 	#tb.adopt_element("uhd_control_sink",uhd_control_sink)
 	#tb.adopt_element("uhd_control_source",uhd_control_source)
