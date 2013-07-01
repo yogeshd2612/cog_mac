@@ -123,6 +123,7 @@ class csma_mac(gras.Block):
 		self.nav_start=0
 		self.cts_rcvd=False
 		self.ack_rcvd=False
+		self.re_tx=False
 
 	def param(self):
 		print "Destination addr : ",self.dest_addr
@@ -156,10 +157,11 @@ class csma_mac(gras.Block):
 
 		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
 			msg_str=pkt_msg.buff.get().tostring()
-			#print "Received something"
+			print "Received something"
 			if(len(msg_str) >4):
 				#For RTS pkts
-				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==RTS_PKT ):
+				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==RTS_PKT and ord(msg_str[PKT_INDEX_DEST])!=self.source_addr):
+					print "RTS_PKT Rcvd"
 					self.nav_wait= struct.unpack(">d",msg_str[NAV_START:NAV_END+1])[0]
 					self.quiet=True
 					self.nav_start=time.time()
@@ -170,6 +172,7 @@ class csma_mac(gras.Block):
 				if(ord(msg_str[PKT_INDEX_DEST])==self.source_addr and ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
 					if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
 						#print "pack tx successfully ",self.arq_expected_sequence_no
+						print "ACK_PKT Rcvd"
 						self.nav=time.time()-self.tx_time()
 						self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255
 						self.total_pkt_txed+=1
@@ -183,6 +186,7 @@ class csma_mac(gras.Block):
 
 				#For CTS pkts
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==CTS_PKT ):
+					print "CTS Received from ",ord(msg_str[PKT_INDEX_DEST])
 					if(ord(msg_str[PKT_INDEX_DEST])==self.source_addr):
 						self.cts_rcvd=True
 					else:
@@ -209,7 +213,7 @@ class csma_mac(gras.Block):
 					self.backoff_counter=random.randrange(self.backoff_range)
 			else:
 				self.state=RTS
-		if(self.state=BACKOFF):
+		if(self.state==BACKOFF):
 			while(not self.cs_busy() and self.backoff_counter>0):
 				self.backoff_counter-=1
 			if(self.backoff_counter==0):
@@ -222,7 +226,7 @@ class csma_mac(gras.Block):
 			self.send_pkt(pkt_str,PHY_PORT)
 			self.cts_start=time.time()
 			self.state=CTS
-
+		
 		if(self.state==CTS):
 			#waiting for CTS
 			if(self.cts_rcvd):
@@ -234,15 +238,17 @@ class csma_mac(gras.Block):
 				self.tx_time=time.time()		
 				self.total_tx+=1
 				print "Transmitting Pkt no. ",self.arq_expected_sequence_no
-				pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(RTS_PKT)+chr(self.arq_expected_sequence_no)+self.outgoing_msg
+				pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(DATA_PKT)+chr(self.arq_expected_sequence_no)+self.outgoing_msg
 				self.send_pkt(pkt_str,PHY_PORT)
 				self.ack_rcvd=False
 				self.re_tx=False
-				self.state=ACK_WAIT
+				self.state=BUSY
 			if(time.time()>self.cts_start+self.cts_timeout):
+				print "CTS missed"
 				self.state=IDLE
 
 		if(self.state==BUSY):
+			#print "In Busy"
 			if(self.quiet):
 				if(time.time()>self.nav_start+self.nav_wait):
 					self.state=IDLE
@@ -253,17 +259,17 @@ class csma_mac(gras.Block):
 
 			if(not self.ack_rcvd):
 				if(time.time()-self.tx_time>self.time_out):
-				if(self.no_attempts>self.max_attempts):
-					print "pkt failed arq "
-					self.failed_arq+=1
-					# trying next packet
-					self.state=IDLE
-					self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255 
-				else:
-					#retransmit
-					print "Retransmitting : ",self.no_attempts," ",time.time()-self.tx_time," ",self.time_out
-					self.state=IDLE
-					self.re_tx=True
+					if(self.no_attempts>self.max_attempts):
+						print "pkt failed arq "
+						self.failed_arq+=1
+						# trying next packet
+						self.state=IDLE
+						self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255 
+					else:
+						#retransmit
+						print "Retransmitting : ",self.no_attempts," ",time.time()-self.tx_time," ",self.time_out
+						self.state=IDLE
+						self.re_tx=True
 			
 	
 		
@@ -273,8 +279,8 @@ class csma_mac(gras.Block):
 		#get a reference counted buffer to pass downstream
 		buff = self.get_output_buffer(port)
 		buff.offset = 0
-		buff.length = len(pkt_str)
-		buff.get()[:] = numpy.fromstring(pkt_str, numpy.uint8)
+		buff.length = len(msg)
+		buff.get()[:] = numpy.fromstring(msg, numpy.uint8)
 		self.post_output_msg(PHY_PORT,gras.PacketMsg(buff))
 		
 	#sense channel
