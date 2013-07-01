@@ -86,6 +86,7 @@ if __name__ == '__main__':
 	tb.start()
 	while(1):
 		print tb.probe_0.get("level")
+		time.sleep(1)
 
 	
 

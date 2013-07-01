@@ -190,9 +190,9 @@ class csma_mac(gras.Block):
 			a=0
 
 		if(self.ack_pending):
-			'''if(not self.sifs_in):
+			if(not self.sifs_in):
 				self.sifs_start=time.time()
-				self.sifs_in=True'''
+				self.sifs_in=True
 			while(time.time()<self.sifs_start+self.sifs):
 				a=0
 			#if(time.time()>self.sifs_start+self.sifs and not self.cs_busy()):

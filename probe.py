@@ -16,6 +16,7 @@ class probe(gras.Block):
 		self.alpha=alpha
 		self.output=0.0
 	def work(self,ins,outs):
+		#print "probe working"
 		n=len(ins[0])
 		for i in range(n):
 			mag_sqrd=ins[0][i].real*ins[0][i].real+ins[0][i].imag*ins[0][i].imag

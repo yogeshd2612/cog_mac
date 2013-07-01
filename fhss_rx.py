@@ -141,6 +141,7 @@ class fhss_engine_rx(gras.Block):
 			else:
 				print "Lost Sync..."
 				self.start=False
+				
 
 
 			
