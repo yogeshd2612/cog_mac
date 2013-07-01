@@ -45,9 +45,7 @@ SIFS = 3
 RTS = 4
 CTS = 5
 BACKOFF = 6
-ACK = 7
-CTS_RCVD = 8
-ACK_WAIT =9
+ACK_WAIT =7
 
 
 #CS States
@@ -198,7 +196,7 @@ class csma_mac(gras.Block):
 
 
 		#state machine
-				
+
 		if(self.state==IDLE):
 			self.state=DIFS
 		if(self.state==DIFS):
