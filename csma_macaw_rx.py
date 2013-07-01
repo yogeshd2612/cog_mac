@@ -155,7 +155,7 @@ class csma_mac(gras.Block):
 					self.ack_dest=msg_str[PKT_INDEX_SRC]
 					#Sending packet to APP
 					print "Data Pkt Received"
-					send_pkt(msg_str[4:],APP_PORT)
+					self.send_pkt(msg_str[4:],APP_PORT)
 
 				#For CTS pkts
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==CTS_PKT ):
@@ -170,8 +170,9 @@ class csma_mac(gras.Block):
 			while(time.time()<self.sifs_start+self.sifs):
 				a=0
 			print "sending ACK"
-			pkt_str=chr(self.ack_dest)+chr(self.source_addr)+chr(ACK_PKT)+chr(self.ack_no)+"####"	
-			send_pkt(pkt_str,PHY_PORT)
+			pkt_str=self.ack_dest+chr(self.source_addr)+chr(ACK_PKT)+self.ack_no+"####"	
+			self.send_pkt(pkt_str,PHY_PORT)
+			self.ack_pending=False
 
 		
 		

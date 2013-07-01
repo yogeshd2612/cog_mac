@@ -157,8 +157,9 @@ class csma_mac(gras.Block):
 
 		if isinstance(pkt_msg, gras.PacketMsg) and len(pkt_msg.buff)>0: 
 			msg_str=pkt_msg.buff.get().tostring()
-			print "Received something"
+			
 			if(len(msg_str) >4):
+				print "Received something"
 				#For RTS pkts
 				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==RTS_PKT and ord(msg_str[PKT_INDEX_DEST])!=self.source_addr):
 					print "RTS_PKT Rcvd"
@@ -169,23 +170,26 @@ class csma_mac(gras.Block):
 
 			 
 				#For ACk_PKT
-				if(ord(msg_str[PKT_INDEX_DEST])==self.source_addr and ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
+				elif(ord(msg_str[PKT_INDEX_DEST])==self.source_addr and ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
 					if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
 						#print "pack tx successfully ",self.arq_expected_sequence_no
 						print "ACK_PKT Rcvd"
-						self.nav=time.time()-self.tx_time()
+						self.nav=time.time()-self.tx_time
 						self.arq_expected_sequence_no=(self.arq_expected_sequence_no+1)%255
 						self.total_pkt_txed+=1
 						self.state=BUSY
 						self.ack_rcvd=True
+					else:
+						print "Wrong ACK"
+
 
 				# For data pkts
-				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
+				elif(ord(msg_str[PKT_INDEX_CNTRL_ID])==DATA_PKT):
 					#This is transmitter
 					pass
 
 				#For CTS pkts
-				if(ord(msg_str[PKT_INDEX_CNTRL_ID])==CTS_PKT ):
+				elif(ord(msg_str[PKT_INDEX_CNTRL_ID])==CTS_PKT ):
 					print "CTS Received from ",ord(msg_str[PKT_INDEX_DEST])
 					if(ord(msg_str[PKT_INDEX_DEST])==self.source_addr):
 						self.cts_rcvd=True
@@ -194,6 +198,9 @@ class csma_mac(gras.Block):
 						self.quiet=True
 						self.nav_start=time.time()
 						self.state=BUSY
+				else:
+					print "fishy"
+
 		else:
 			#fishy
 			pass
@@ -203,7 +210,7 @@ class csma_mac(gras.Block):
 
 		if(self.state==IDLE):
 			self.state=DIFS
-		if(self.state==DIFS):
+		elif(self.state==DIFS):
 			if(not self.difs_in):
 				self.difs_in=True
 				self.difs_start=time.time()
@@ -213,13 +220,13 @@ class csma_mac(gras.Block):
 					self.backoff_counter=random.randrange(self.backoff_range)
 			else:
 				self.state=RTS
-		if(self.state==BACKOFF):
+		elif(self.state==BACKOFF):
 			while(not self.cs_busy() and self.backoff_counter>0):
 				self.backoff_counter-=1
 			if(self.backoff_counter==0):
 				self.state=RTS
 
-		if(self.state==RTS):
+		elif(self.state==RTS):
 			#adding frame info
 			print "Sending RTS Request ..."
 			pkt_str=chr(self.dest_addr)+chr(self.source_addr)+chr(RTS_PKT)+struct.pack('>d',self.nav)+"####"
@@ -227,7 +234,7 @@ class csma_mac(gras.Block):
 			self.cts_start=time.time()
 			self.state=CTS
 		
-		if(self.state==CTS):
+		elif(self.state==CTS):
 			#waiting for CTS
 			if(self.cts_rcvd):
 				if(not self.re_tx):
@@ -242,22 +249,24 @@ class csma_mac(gras.Block):
 				self.send_pkt(pkt_str,PHY_PORT)
 				self.ack_rcvd=False
 				self.re_tx=False
-				self.state=BUSY
+				self.state=ACK_WAIT
 			if(time.time()>self.cts_start+self.cts_timeout):
 				print "CTS missed"
 				self.state=IDLE
 
-		if(self.state==BUSY):
+		elif(self.state==BUSY):
 			#print "In Busy"
 			if(self.quiet):
 				if(time.time()>self.nav_start+self.nav_wait):
 					self.state=IDLE
 					self.quiet=False
-
-			if(self.ack_rcvd and not self.quiet):
+			else:
 				self.state=IDLE
 
-			if(not self.ack_rcvd):
+		elif(self.state==ACK_WAIT):
+			if(self.ack_rcvd):
+				self.state=BUSY
+			else:
 				if(time.time()-self.tx_time>self.time_out):
 					if(self.no_attempts>self.max_attempts):
 						print "pkt failed arq "
@@ -270,7 +279,8 @@ class csma_mac(gras.Block):
 						print "Retransmitting : ",self.no_attempts," ",time.time()-self.tx_time," ",self.time_out
 						self.state=IDLE
 						self.re_tx=True
-			
+		else:
+			pass	
 	
 		
 	#post msg data to phy/app port 
