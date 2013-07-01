@@ -171,6 +171,7 @@ class csma_mac(gras.Block):
 			 
 				#For ACk_PKT
 				elif(ord(msg_str[PKT_INDEX_DEST])==self.source_addr and ord(msg_str[PKT_INDEX_CNTRL_ID])==ACK_PKT):
+					print "SOME ACK RCVD"
 					if(ord(msg_str[PKT_INDEX_SEQ])==self.arq_expected_sequence_no):
 						#print "pack tx successfully ",self.arq_expected_sequence_no
 						print "ACK_PKT Rcvd"
