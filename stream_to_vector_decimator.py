@@ -45,7 +45,8 @@ class stream_to_vector_decimator(gr.hier_block2):
         s2v = gr.stream_to_vector(item_size, vec_len)
         self.one_in_n = gr.keep_one_in_n(item_size*vec_len, 1)
         self._update_decimator()
-        self.connect(self, s2v, self.one_in_n, self)
+        #self.connect(self, s2v, self.one_in_n, self)
+        self.connect(self,s2v,self)
 
     def set_sample_rate(self, sample_rate):
         """

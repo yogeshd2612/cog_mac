@@ -22,6 +22,9 @@ class probe(gras.Block):
 		n=len(ins[0])
 		#print "len",len(ins[0][0])
 		for i in range(n):
+			#decimation taking every 8th vector
+			if(i%8!=0):
+				continue
 			st=0.0
 			x=numpy.concatenate([ins[0][i][self.fft_size/2:],ins[0][i][0:self.fft_size/2]])
 			'''for j in range(len(x)):
